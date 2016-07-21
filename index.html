@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>autocreate.js</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width" />
+</head>
+<body>
+
+<p>
+	<button id="add">Add</button>
+	<button id="remove">Remove</button>
+</p>
+
+<div class="wrapper">
+	<div class="module">1</div>
+	<div class="module">2</div>
+	<div class="module">3</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/u.js/0.31.0/u.min.js"></script>
+<script src="autocreate.js"></script>
+
+<script>
+
+/**
+ * Look for `.module` elements in `.wrapper`.
+ */
+autocreate({
+	/**
+	 * Match selector.
+	 */
+	selector: '.module',
+
+	/**
+	 * Callback which is called with the element matching the selector.
+	 */
+	create: function (element) {
+		var self = this;
+
+		//element.textContent = 'Init';
+
+		this.interval = setInterval(function () {
+			self.value = (Math.random() * 100) | 0;
+			element.textContent = self.value;
+		}, 500);
+
+		console.log('create');
+	},
+
+	/**
+	 * Callback which is called when the element or one of its parents is removed.
+	 */
+	destroy: function (element) {
+		clearInterval(this.interval);
+
+		console.log('destroy');
+	},
+});
+
+/**
+ * Add `.module` element to `.wrapper`.
+ */
+document.querySelector('#add').addEventListener('click', function () {
+	var button = document.createElement('div');
+	button.classList.add('module');
+	button.textContent = 'Text';
+
+	document.querySelector('.wrapper').appendChild(button);
+});
+
+/**
+ * Remove single `.module` element from DOM.
+ */
+document.querySelector('#remove').addEventListener('click', function () {
+	var button = document.querySelector('.module');
+
+	if (button) {
+		button.parentNode.removeChild(button);
+	}
+});
+
+</script>
+
+</body>
+</html>
