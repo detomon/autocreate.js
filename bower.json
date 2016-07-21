@@ -27,6 +27,9 @@
     "src"
   ],
   "keywords": [
-    "Plugin",
+    "DOM",
+    "Event",
+    "Manipulation",
+    "Query"
   ]
 }
