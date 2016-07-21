@@ -1,0 +1,32 @@
+{
+  "name": "autocreate.js",
+  "version": "0.1",
+  "description": "autocreate.js is a tiny script that watches for the creation of elements matching a given selector",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/detomon/autocreate.js.git"
+  },
+  "authors": [
+    "Simon Schoenenberger"
+  ],
+  "main": "autocreate.js",
+  "license": "MIT",
+  "homepage": "https://github.com/detomon/autocreate.js",
+  "ignore": [
+    ".bower.json",
+    ".editorconfig",
+    ".git",
+    ".gitattributes",
+    ".gitignore",
+    "examples",
+    "doc",
+    "extensions",
+    "grunt",
+    "Gruntfile.js",
+    "node_modules",
+    "src"
+  ],
+  "keywords": [
+    "Plugin",
+  ]
+}
