@@ -79,3 +79,34 @@ autocreate({
 	},
 });
 ```
+
+## Using with jQuery or u.js
+
+The observer function can also be called using `jQuery` or `u.js`. The following observes the whole document:
+
+```js
+$(document).autocreate({
+	selector: '.element',
+	create: function (element) {
+		// ...
+	},
+	destroy: function (element) {
+		// ...
+	},
+});
+```
+
+The following matches only elements in `.wrapper` elements. This is the same as using the `parent` option.
+
+```js
+$('.wrapper').autocreate({
+	selector: '.element',
+	create: function (element) {
+		// ...
+	},
+	destroy: function (element) {
+		// ...
+	},
+});
+
+```
