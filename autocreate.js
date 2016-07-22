@@ -28,6 +28,7 @@ var dataValues = {};
 var keyIndex = 0;
 var key = 'ac' + rand();
 var initialized = false;
+var dom = document.documentElement;
 
 function rand() {
 	var r = Math.random;
@@ -57,7 +58,7 @@ function unsetData(element) {
 	delete dataValues[element.dataset[key]];
 }
 
-function createParentContext(parent) {
+function observerContext(parent) {
 	var context = parent[key];
 
 	if (!context) {
@@ -68,7 +69,7 @@ function createParentContext(parent) {
 		parent.addEventListener('DOMNodeInserted', function (e) {
 			var target = e.target;
 
-			if (target.nodeType == Node.ELEMENT_NODE) {
+			if (target.nodeType === Node.ELEMENT_NODE) {
 				handleContext(this[key], target.parentNode);
 			}
 		});
@@ -77,7 +78,7 @@ function createParentContext(parent) {
 	return context;
 }
 
-function createElementContext(element) {
+function elementContext(element) {
 	var context = data(element);
 
 	if (!context) {
@@ -94,13 +95,12 @@ function handleModule(module, parent) {
 
 	for (var j = 0; j < elements.length; j ++) {
 		var element = elements[j];
-		var context = createElementContext(element);
+		var context = elementContext(element);
 
 		if (!context.data[module.id]) {
-			var object = {
+			var object = context.data[module.id] = {
 				_module: module,
 			};
-			context.data[module.id] = object;
 			module.create.call(object, element);
 		}
 	}
@@ -126,7 +126,7 @@ function destroyElements(elements) {
 		for (var i in modules) {
 			if (modules.hasOwnProperty(i)) {
 				var module = modules[i]._module;
-				module.destroy.call(context.data[i], element);
+				module.destroy.call(module, element);
 			}
 		}
 
@@ -134,14 +134,18 @@ function destroyElements(elements) {
 	}
 }
 
-function init(dom) {
+function error(string) {
+	throw new Error(string);
+}
+
+function init() {
 	if (!initialized) {
 		initialized = true;
 
 		dom.addEventListener('DOMNodeRemoved', function (e) {
 			var target = e.target;
 
-			if (target.nodeType == Node.ELEMENT_NODE) {
+			if (target.nodeType === Node.ELEMENT_NODE) {
 				var elements = target.querySelectorAll('[data-' + key + ']');
 				destroyElements(elements);
 
@@ -154,15 +158,10 @@ function init(dom) {
 }
 
 function autocreate(options) {
-	var dom = document.documentElement;
-	var query = options.selector;
-	var parent = options.parent ? options.parent : dom;
-	var context = createParentContext(parent);
+	var query = options.selector || error('Query cannot be empty');
+	var parent = options.parent || dom;
+	var context = observerContext(parent);
 	var id = rand();
-
-	if (!query) {
-		throw new Error('Query cannot be empty');
-	}
 
 	var module = context.modules[id] = {
 		id: id,
@@ -171,7 +170,7 @@ function autocreate(options) {
 		destroy: options.destroy || function () {},
 	};
 
-	init(dom);
+	init();
 
 	handleModule(module, parent);
 }
