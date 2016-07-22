@@ -53,6 +53,10 @@ function data(element, value) {
 	return value;
 }
 
+function unsetData(element) {
+	delete dataValues[element.dataset[key]];
+}
+
 function createParentContext(parent) {
 	var context = parent[key];
 
@@ -125,6 +129,8 @@ function destroyElements(elements) {
 				module.destroy.call(context.data[i], element);
 			}
 		}
+
+		unsetData(element);
 	}
 }
 
