@@ -26,7 +26,8 @@
 
 var dataValues = {};
 var keyIndex = 0;
-var key = 'ac' + new Date().getTime();
+var time = new Date().getTime();
+var key = 'ac' + time;
 var initialized = false;
 
 function data(element, value) {
@@ -47,21 +48,19 @@ function data(element, value) {
 	return value;
 }
 
-function createContext(element) {
-	var context = data(element);
+function createParentContext(parent) {
+	var context = parent[key];
 
 	if (!context) {
-		context = data(element, {
+		context = parent[key] = {
 			modules: {},
-			data: {},
-			element: element,
-		});
+		};
 
-		element.addEventListener('DOMNodeInserted', function (e) {
+		parent.addEventListener('DOMNodeInserted', function (e) {
 			var target = e.target;
 
 			if (target.nodeType == Node.ELEMENT_NODE) {
-				handleContext(data(this), target.parentNode);
+				handleContext(this[key], target.parentNode);
 			}
 		});
 	}
@@ -69,17 +68,30 @@ function createContext(element) {
 	return context;
 }
 
-function handleModule(context, module, parent) {
+function createElementContext(element) {
+	var context = data(element);
+
+	if (!context) {
+		context = data(element, {
+			data: {},
+		});
+	}
+
+	return context;
+}
+
+function handleModule(module, parent) {
 	var elements = parent.querySelectorAll(module.query);
 
 	for (var j = 0; j < elements.length; j ++) {
 		var element = elements[j];
-		var elementContext = createContext(element);
+		var context = createElementContext(element);
 
-		if (!elementContext.data[module.id]) {
-			var object = {};
-			elementContext.modules[module.id] = module;
-			elementContext.data[module.id] = object;
+		if (!context.data[module.id]) {
+			var object = {
+				_module: module,
+			};
+			context.data[module.id] = object;
 			module.create.call(object, element);
 		}
 	}
@@ -91,7 +103,7 @@ function handleContext(context, parent) {
 	for (var i in modules) {
 		if (modules.hasOwnProperty(i)) {
 			var module = modules[i];
-			handleModule(context, module, parent);
+			handleModule(module, parent);
 		}
 	}
 }
@@ -100,39 +112,18 @@ function destroyElements(elements) {
 	for (var i = 0; i < elements.length; i ++) {
 		var element = elements[i];
 		var context = data(element);
-		var modules = context.modules;
+		var modules = context.data;
 
 		for (var i in modules) {
 			if (modules.hasOwnProperty(i)) {
-				var module = modules[i];
+				var module = modules[i]._module;
 				module.destroy.call(context.data[i], element);
 			}
 		}
 	}
 }
 
-function autocreate(options) {
-	var dom = document.documentElement;
-	var query = options.selector;
-	var parent = options.parent ? options.parent : dom;
-	var context = createContext(parent);
-	var modules = context.modules;
-
-	if (!query) {
-		throw new Error('Query cannot be empty');
-	}
-
-	options.create = options.create || function () {};
-	options.destroy = options.destroy || function () {};
-
-	var id = Math.random() * 1e9;
-	var module = modules[id] = {
-		query: query,
-		create: options.create,
-		destroy: options.destroy,
-		id: id,
-	};
-
+function init(dom) {
 	if (!initialized) {
 		initialized = true;
 
@@ -149,8 +140,29 @@ function autocreate(options) {
 			}
 		});
 	}
+}
 
-	handleModule(context, module, parent);
+function autocreate(options) {
+	var dom = document.documentElement;
+	var query = options.selector;
+	var parent = options.parent ? options.parent : dom;
+	var context = createParentContext(parent);
+	var id = Math.random() * 1e9;
+
+	if (!query) {
+		throw new Error('Query cannot be empty');
+	}
+
+	var module = context.modules[id] = {
+		id: id,
+		query: query,
+		create: options.create || function () {},
+		destroy: options.destroy || function () {},
+	};
+
+	init(dom);
+
+	handleModule(module, parent);
 }
 
 window.autocreate = autocreate;
