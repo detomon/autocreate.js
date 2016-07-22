@@ -26,9 +26,14 @@
 
 var dataValues = {};
 var keyIndex = 0;
-var time = new Date().getTime();
-var key = 'ac' + time;
+var key = 'ac' + rand();
 var initialized = false;
+
+function rand() {
+	var r = Math.random;
+
+	return ((((1 + r()) * 0x100000)) | 0) + '' + ((((1 + r()) * 0x100000)) | 0);
+}
 
 function data(element, value) {
 	if (value === undefined) {
@@ -38,8 +43,8 @@ function data(element, value) {
 		var index = element.dataset[key];
 
 		if (index === undefined) {
-			index = element.dataset[key] = (Math.random() * 1e9) + '_' + (keyIndex ++);
-			keyIndex %= 1e9;
+			index = element.dataset[key] = rand() + (keyIndex ++);
+			keyIndex %= 0x100000000;
 		}
 
 		dataValues[index] = value;
@@ -147,7 +152,7 @@ function autocreate(options) {
 	var query = options.selector;
 	var parent = options.parent ? options.parent : dom;
 	var context = createParentContext(parent);
-	var id = Math.random() * 1e9;
+	var id = rand();
 
 	if (!query) {
 		throw new Error('Query cannot be empty');
