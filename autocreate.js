@@ -24,67 +24,90 @@
 (function(window, document, $) {
 'use strict';
 
-var inited = false;
-var key = '_ac' + new Date().getTime();
+var dataValues = {};
+var keyIndex = 0;
+var key = 'ac' + new Date().getTime();
+var initialized = false;
 
-function handleContext(context, parent) {
-	var queries = context.queries;
-
-	for (var query in queries) {
-		if (queries.hasOwnProperty(query)) {
-			var modules = queries[query];
-
-			for (var i = 0; i < modules.length; i ++) {
-				var module = modules[i];
-				var elements = parent.querySelectorAll(query);
-
-				for (var j = 0; j < elements.length; j ++) {
-					var element = elements[j];
-					var elementContext = createContext(element);
-
-					if (!elementContext.done[context.id]) {
-						elementContext.done[context.id] = true;
-						elementContext.modules.push(module);
-						module.create.call(elementContext, element);
-					}
-				}
-			}
-		}
+function data(element, value) {
+	if (value === undefined) {
+		value = dataValues[element.dataset[key]];
 	}
+	else {
+		var index = element.dataset[key];
+
+		if (index === undefined) {
+			index = element.dataset[key] = (Math.random() * 1e9) + '_' + (keyIndex ++);
+			keyIndex %= 1e9;
+		}
+
+		dataValues[index] = value;
+	}
+
+	return value;
 }
 
 function createContext(element) {
-	if (!element[key]) {
-		element[key] = {
-			queries: {},
-			modules: [],
-			done: {},
+	var context = data(element);
+
+	if (!context) {
+		context = data(element, {
+			modules: {},
+			data: {},
 			element: element,
-			id: (Math.random() * 1e9).toString(),
-		};
+		});
 
 		element.addEventListener('DOMNodeInserted', function (e) {
-			handleContext(this[key], e.target.parentNode);
+			var target = e.target;
+
+			if (target.nodeType == Node.ELEMENT_NODE) {
+				handleContext(data(this), target.parentNode);
+			}
 		});
 	}
 
-	return element[key];
+	return context;
 }
 
-function destroyTree(element) {
-	var context = element[key];
+function handleModule(context, module, parent) {
+	var elements = parent.querySelectorAll(module.query);
 
-	if (context) {
-		var modules = context.modules;
+	for (var j = 0; j < elements.length; j ++) {
+		var element = elements[j];
+		var elementContext = createContext(element);
 
-		for (var i = 0; i < modules.length; i ++) {
-			var module = modules[i];
-			module.destroy.call(context, element);
+		if (!elementContext.data[module.id]) {
+			var object = {};
+			elementContext.modules[module.id] = module;
+			elementContext.data[module.id] = object;
+			module.create.call(object, element);
 		}
 	}
+}
 
-	for (var child = element.firstChild; child; child = child.nextSibling) {
-		destroyTree(child);
+function handleContext(context, parent) {
+	var modules = context.modules;
+
+	for (var i in modules) {
+		if (modules.hasOwnProperty(i)) {
+			var module = modules[i];
+			handleModule(context, module, parent);
+		}
+	}
+}
+
+function destroyElements(elements) {
+	for (var i = 0; i < elements.length; i ++) {
+		var element = elements[i];
+		var context = data(element);
+		var modules = context.modules;
+
+		for (var i in modules) {
+			if (modules.hasOwnProperty(i)) {
+				var module = modules[i];
+				module.destroy.call(context.data[i], element);
+			}
+		}
 	}
 }
 
@@ -93,7 +116,7 @@ function autocreate(options) {
 	var query = options.selector;
 	var parent = options.parent ? options.parent : dom;
 	var context = createContext(parent);
-	var queries = context.queries;
+	var modules = context.modules;
 
 	if (!query) {
 		throw new Error('Query cannot be empty');
@@ -101,22 +124,33 @@ function autocreate(options) {
 
 	options.create = options.create || function () {};
 	options.destroy = options.destroy || function () {};
-	queries[query] = queries[query] || [];
 
-	queries[query].push({
+	var id = Math.random() * 1e9;
+	var module = modules[id] = {
+		query: query,
 		create: options.create,
 		destroy: options.destroy,
-	});
+		id: id,
+	};
 
-	if (!inited) {
-		inited = true;
+	if (!initialized) {
+		initialized = true;
 
 		dom.addEventListener('DOMNodeRemoved', function (e) {
-			destroyTree(e.target);
+			var target = e.target;
+
+			if (target.nodeType == Node.ELEMENT_NODE) {
+				var elements = target.querySelectorAll('[data-' + key + ']');
+				destroyElements(elements);
+
+				if (data(target)) {
+					destroyElements([target]);
+				}
+			}
 		});
 	}
 
-	handleContext(context, parent);
+	handleModule(context, module, parent);
 }
 
 window.autocreate = autocreate;
