@@ -91,7 +91,7 @@ function elementContext(element) {
 }
 
 function handleModule(module, parent) {
-	var elements = parent.querySelectorAll(module.query);
+	var elements = parent.querySelectorAll(module.selector);
 
 	for (var j = 0; j < elements.length; j ++) {
 		var element = elements[j];
@@ -159,14 +159,14 @@ function init() {
 }
 
 function autocreate(options) {
-	var query = options.selector || error('Query cannot be empty');
+	var selector = options.selector || error('Query cannot be empty');
 	var parent = options.parent || dom;
 	var context = observerContext(parent);
 	var id = rand();
 
 	var module = context.modules[id] = {
 		id: id,
-		query: query,
+		selector: selector,
 		create: options.create || function () {},
 		destroy: options.destroy || function () {},
 	};
