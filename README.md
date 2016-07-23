@@ -1,6 +1,6 @@
 # autocreate.js
 
-`autocreate.js` is a tiny script that watches for the creation of elements matching a given selector. The `create` callback is called for existing and later inserted elements. The `destroy` callback is called when the element or one of its ancestors is removed from the DOM.
+`autocreate.js` provides a small function that watches for the creation of elements matching a given selector. The `create` callback is called for existing and later inserted elements. The `destroy` callback is called whenever the element or one of its ancestors is removed from the DOM.
 
 ```html
 <div class="page-wrapper">
@@ -13,8 +13,8 @@
 ```
 
 ```js
-autocreate({
-	// selector of element(s) to observe
+var module = autocreate({
+	// selector of elements to observe
 	selector: '.page-wrapper .slideshow',
 
 	// called for existing and inserted elements
@@ -23,7 +23,7 @@ autocreate({
 		this.slideshow = new Slideshow(element);
 	},
 
-	// called when element is removed
+	// called whenever the element or one of its ancestors is removed
 	destroy: function (element) {
 		// destroy slideshow
 		this.slideshow.destroy();
@@ -35,19 +35,19 @@ autocreate({
 The following will call the `create` callback:
 
 ```js
-var slideshow = document.createElement('div');
+var container = document.createElement('div');
 
-slideshow.innerHTML =
+container.innerHTML =
 	'<ul class="slideshow">' +
 	'	<li class="slide">D</li>' +
 	'	<li class="slide">E</li>' +
 	'	<li class="slide">F</li>' +
 	'</ul>';
 
-document.querySelector('.page-wrapper').appendChild(slideshow);
+document.querySelector('.page-wrapper').appendChild(container);
 ```
 
-The following call the `destroy` callback for each `.slideshow` element:
+The following will call the `destroy` callback for each `.slideshow` element:
 
 ```js
 var wrapper = document.querySelector('.page-wrapper');
@@ -57,16 +57,16 @@ wrapper.parentNode.removeChild(wrapper);
 
 ## Options
 
-The `parent` option restricts the matched elements to a given parent element:
+The `parents` option restricts the search to the given elements. This can be a single element or a collection of elements inside an array or array-like object.
 
 ```js
 
-autocreate({
+var module = autocreate({
 	// selector of element to initialize
 	selector: '.element',
 
-	// (optional) match only in given parent element
-	parent: document.querySelector('.wrapper'),
+	// (optional) match only in given parent element(s)
+	parents: document.querySelectorAll('.wrapper'),
 
 	// called for existing and inserted elements
 	create: function (element) {
@@ -80,12 +80,20 @@ autocreate({
 });
 ```
 
+## Destroying a module
+
+To destroy the module and stop watching for the selector, call the `destroy` method on the returned module instance. This will also call the `destroy` callback for each currently matched element.
+
+```js
+module.destroy();
+```
+
 ## Using with jQuery or u.js
 
 The observer function can also be called using `jQuery` or `u.js`. The following observes the whole document:
 
 ```js
-$(document).autocreate({
+var module = $(document).autocreate({
 	selector: '.element',
 	create: function (element) {
 		// ...
@@ -96,10 +104,10 @@ $(document).autocreate({
 });
 ```
 
-The following matches only elements in `.wrapper` elements. This is the same as using the `parent` option.
+The following searches only in `.wrapper` elements. This is the same as using the `parents` option.
 
 ```js
-$('.wrapper').autocreate({
+var module = $('.wrapper').autocreate({
 	selector: '.element',
 	create: function (element) {
 		// ...
