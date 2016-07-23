@@ -36,6 +36,16 @@ function rand() {
 	return ((((1 + r()) * 0x100000)) | 0) + '' + ((((1 + r()) * 0x100000)) | 0);
 }
 
+function unique(array) {
+	return array.sort().reduce(function (list, value) {
+		if (list[list.length - 1] !== value) {
+			list.push(value);
+		}
+
+		return list;
+	}, []);
+}
+
 function data(element, value) {
 	if (value === undefined) {
 		value = dataValues[element.dataset[key]];
@@ -59,11 +69,11 @@ function unsetData(element) {
 	delete dataValues[element.dataset[key]];
 }
 
-function observerContext(parent) {
-	var context = parent[key];
+function observerCtx(parent) {
+	var ctx = parent[key];
 
-	if (!context) {
-		context = parent[key] = {
+	if (!ctx) {
+		ctx = parent[key] = {
 			modules: {},
 		};
 
@@ -71,24 +81,24 @@ function observerContext(parent) {
 			var target = e.target;
 
 			if (target.nodeType === Node.ELEMENT_NODE) {
-				handleContext(this[key], target.parentNode);
+				handleCtx(this[key], target.parentNode);
 			}
 		});
 	}
 
-	return context;
+	return ctx;
 }
 
-function elementContext(element) {
-	var context = data(element);
+function elementCtx(element) {
+	var ctx = data(element);
 
-	if (!context) {
-		context = data(element, {
+	if (!ctx) {
+		ctx = data(element, {
 			data: {},
 		});
 	}
 
-	return context;
+	return ctx;
 }
 
 function handleModule(module, parent) {
@@ -96,20 +106,20 @@ function handleModule(module, parent) {
 
 	for (var j = 0; j < elements.length; j ++) {
 		var element = elements[j];
-		var context = elementContext(element);
+		var ctx = elementCtx(element);
 
-		if (!context.data[module.id]) {
-			var object = context.data[module.id] = {
+		if (!ctx.data[module.id]) {
+			var object = ctx.data[module.id] = {
 				_module: module,
 			};
-			module.elements[context._id] = element;
-			module.createContext.call(object, element);
+			module.elements[ctx._id] = element;
+			module.createCtx.call(object, element);
 		}
 	}
 }
 
-function handleContext(context, parent) {
-	var modules = context.modules;
+function handleCtx(ctx, parent) {
+	var modules = ctx.modules;
 
 	for (var i in modules) {
 		if (modules.hasOwnProperty(i)) {
@@ -119,22 +129,22 @@ function handleContext(context, parent) {
 	}
 }
 
-function destroyElementModule(element, module, context) {
+function destroyElementModule(element, module, ctx) {
 	var moduleData = module;
 	var module = moduleData._module;
 
-	module.destroyContext.call(moduleData, element);
-	delete module.elements[context._id];
+	module.destroyCtx.call(moduleData, element);
+	delete module.elements[ctx._id];
 }
 
 function destroyElement(element) {
-	var context = data(element);
-	var modules = context.data;
+	var ctx = data(element);
+	var modules = ctx.data;
 
 	for (var i in modules) {
 		if (modules.hasOwnProperty(i)) {
 			var module = modules[i];
-			destroyElementModule(element, module, context);
+			destroyElementModule(element, module, ctx);
 		}
 	}
 
@@ -172,61 +182,81 @@ function init() {
 
 function AutoCreate(options) {
 	var selector = options.selector || error('Query cannot be empty');
-	var parent = options.parent || dom;
-	var context = observerContext(parent);
+	var parents = options.parents || dom;
 
-	this.id = rand(),
-	this.parent = parent;
+	// convert to array if not array-like object
+	if (parents.length === undefined) {
+		parents = [parents];
+	}
+
+	parents = unique(parents);
+
+	for (var i = 0; i < parents.length; i ++) {
+		var ctx = observerCtx(parents[i]);
+		ctx.modules[this.id] = this;
+	}
+
+	this.id = rand();
+	this.parents = parents;
 	this.selector = selector;
-	this.createContext = options.create || function () {};
-	this.destroyContext = options.destroy || function () {};
+	this.createCtx = options.create || function () {};
+	this.destroyCtx = options.destroy || function () {};
 	this.elements = {};
-	context.modules[this.id] = this;
 }
 
-function autocreate(options) {
-	var instance;
+AutoCreate.prototype.ctxFromElement = function (element) {
+	var ctx = data(element);
 
-	init();
-
-	instance = new AutoCreate(options);
-	handleModule(instance, instance.parent);
-
-	return instance;
-}
-
-AutoCreate.prototype.contextFromElement = function (element) {
-	var context = data(element);
-
-	if (context) {
-		return context.data[this.id];
+	if (ctx) {
+		return ctx.data[this.id];
 	}
 };
 
 AutoCreate.prototype.destroy = function () {
+	var parents = this.parents;
 	var elements = this.elements;
-	var context = observerContext(this.parent);
 
-	for (var i in elements) {
-		if (elements.hasOwnProperty(i)) {
-			destroyElementModule(elements[i], this, context);
+	for (var i = 0; i < parents.length; i ++) {
+		var ctx = observerCtx(parents[i]);
+
+		for (var i in elements) {
+			if (elements.hasOwnProperty(i)) {
+				destroyElementModule(elements[i], this, ctx);
+			}
 		}
+
+		delete ctx.modules[this.id];
+	}
+};
+
+function autocreate(options) {
+	init();
+
+	var instance = new AutoCreate(options);
+	var parents = instance.parents;
+
+	for (var i = 0; i < parents.length; i ++) {
+		handleModule(instance, parents[i]);
 	}
 
-	delete context.modules[this.id];
-};
+	return instance;
+}
 
 window.autocreate = autocreate;
 
 if ($) {
 	$.fn.autocreate = function (options) {
-		return this.each(function () {
-			options = $.extend(options, {
-				parent: this,
-			});
+		var parents = [];
 
-			return autocreate(options);
+		for (var i = 0; i < this.length; i ++) {
+			parents.push(this[i]);
+		}
+
+		options = $.extend(options, {
+			parents: parents,
 		});
+
+		return autocreate(options);
 	};
 }
 
