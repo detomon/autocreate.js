@@ -125,8 +125,9 @@ function destroyElements(elements) {
 
 		for (var i in modules) {
 			if (modules.hasOwnProperty(i)) {
-				var module = modules[i]._module;
-				module.destroy.call(module, element);
+				var moduleData = modules[i];
+				var module = moduleData._module;
+				module.destroy.call(moduleData, element);
 			}
 		}
 
