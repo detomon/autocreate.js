@@ -48,6 +48,7 @@ function data(element, value) {
 			keyIndex %= 0x100000000;
 		}
 
+		value._id = rand();
 		dataValues[index] = value;
 	}
 
@@ -101,7 +102,8 @@ function handleModule(module, parent) {
 			var object = context.data[module.id] = {
 				_module: module,
 			};
-			module.create.call(object, element);
+			module.elements[context._id] = element;
+			module.createContext.call(object, element);
 		}
 	}
 }
@@ -117,21 +119,25 @@ function handleContext(context, parent) {
 	}
 }
 
+function destroyElement(element) {
+	var context = data(element);
+	var modules = context.data;
+
+	for (var i in modules) {
+		if (modules.hasOwnProperty(i)) {
+			var moduleData = modules[i];
+			var module = moduleData._module;
+			module.destroyContext.call(moduleData, element);
+			delete module.elements[context._id];
+		}
+	}
+
+	unsetData(element);
+}
+
 function destroyElements(elements) {
 	for (var i = 0; i < elements.length; i ++) {
-		var element = elements[i];
-		var context = data(element);
-		var modules = context.data;
-
-		for (var i in modules) {
-			if (modules.hasOwnProperty(i)) {
-				var moduleData = modules[i];
-				var module = moduleData._module;
-				module.destroy.call(moduleData, element);
-			}
-		}
-
-		unsetData(element);
+		destroyElement(elements[i]);
 	}
 }
 
@@ -158,23 +164,51 @@ function init() {
 	}
 }
 
-function autocreate(options) {
+function AutoCreate(options) {
 	var selector = options.selector || error('Query cannot be empty');
 	var parent = options.parent || dom;
 	var context = observerContext(parent);
-	var id = rand();
 
-	var module = context.modules[id] = {
-		id: id,
-		selector: selector,
-		create: options.create || function () {},
-		destroy: options.destroy || function () {},
-	};
+	this.id = rand(),
+	this.parent = parent;
+	this.selector = selector;
+	this.createContext = options.create || function () {};
+	this.destroyContext = options.destroy || function () {};
+	this.elements = {};
+	context.modules[this.id] = this;
+}
+
+function autocreate(options) {
+	var instance;
 
 	init();
 
-	handleModule(module, parent);
+	instance = new AutoCreate(options);
+	handleModule(instance, instance.parent);
+
+	return instance;
 }
+
+AutoCreate.prototype.contextFromElement = function (element) {
+	var context = data(element);
+
+	if (context) {
+		return context.data[this.id];
+	}
+};
+
+AutoCreate.prototype.destroy = function () {
+	var elements = this.elements;
+	var context = observerContext(this.parent);
+
+	for (var i in elements) {
+		if (elements.hasOwnProperty(i)) {
+			destroyElement(elements[i]);
+		}
+	}
+
+	delete context.modules[this.id];
+};
 
 window.autocreate = autocreate;
 
@@ -185,7 +219,7 @@ if ($) {
 				parent: this,
 			});
 
-			autocreate(options);
+			return autocreate(options);
 		});
 	};
 }
