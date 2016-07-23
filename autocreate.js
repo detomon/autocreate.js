@@ -119,16 +119,22 @@ function handleContext(context, parent) {
 	}
 }
 
+function destroyElementModule(element, module, context) {
+	var moduleData = module;
+	var module = moduleData._module;
+
+	module.destroyContext.call(moduleData, element);
+	delete module.elements[context._id];
+}
+
 function destroyElement(element) {
 	var context = data(element);
 	var modules = context.data;
 
 	for (var i in modules) {
 		if (modules.hasOwnProperty(i)) {
-			var moduleData = modules[i];
-			var module = moduleData._module;
-			module.destroyContext.call(moduleData, element);
-			delete module.elements[context._id];
+			var module = modules[i];
+			destroyElementModule(element, module, context);
 		}
 	}
 
@@ -203,7 +209,7 @@ AutoCreate.prototype.destroy = function () {
 
 	for (var i in elements) {
 		if (elements.hasOwnProperty(i)) {
-			destroyElement(elements[i]);
+			destroyElementModule(elements[i], this, context);
 		}
 	}
 
