@@ -191,17 +191,17 @@ function AutoCreate(options) {
 
 	parents = unique(parents);
 
-	for (var i = 0; i < parents.length; i ++) {
-		var ctx = observerCtx(parents[i]);
-		ctx.modules[this.id] = this;
-	}
-
 	this.id = rand();
 	this.parents = parents;
 	this.selector = selector;
 	this.createCtx = options.create || function () {};
 	this.destroyCtx = options.destroy || function () {};
 	this.elements = {};
+
+	for (var i = 0; i < parents.length; i ++) {
+		var ctx = observerCtx(parents[i]);
+		ctx.modules[this.id] = this;
+	}
 }
 
 AutoCreate.prototype.ctxFromElement = function (element) {
