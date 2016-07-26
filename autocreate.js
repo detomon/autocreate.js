@@ -169,13 +169,14 @@ function removeDelayed() {
 	}
 
 	removedTimeout = setTimeout(function () {
-		removedElements = removedElements.filter(function (element) {
+		var element = removedElements.filter(function (element) {
 			return !element.parentNode;
 		});
 
-		destroyElements(removedElements);
+		// may be filled again by destructors
 		removedElements = [];
-	}, 100);
+		destroyElements(element);
+	}, 0);
 }
 
 function init() {
