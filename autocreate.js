@@ -29,6 +29,8 @@ var keyIndex = 0;
 var key = 'ac' + rand();
 var initialized = false;
 var dom = document.documentElement;
+var removedElements = [];
+var removedTimeout;
 
 function rand() {
 	var r = Math.random;
@@ -161,6 +163,21 @@ function error(string) {
 	throw new Error(string);
 }
 
+function removeDelayed() {
+	if (removedTimeout) {
+		clearTimeout(removedTimeout);
+	}
+
+	removedTimeout = setTimeout(function () {
+		removedElements = removedElements.filter(function (element) {
+			return !element.parentNode;
+		});
+
+		destroyElements(removedElements);
+		removedElements = [];
+	}, 100);
+}
+
 function init() {
 	if (!initialized) {
 		initialized = true;
@@ -170,11 +187,16 @@ function init() {
 
 			if (target.nodeType === Node.ELEMENT_NODE) {
 				var elements = target.querySelectorAll('[data-' + key + ']');
-				destroyElements(elements);
+
+				for (var i = 0; i < elements.length; i ++) {
+					removedElements.push(elements[i]);
+				}
 
 				if (data(target)) {
-					destroyElements([target]);
+					removedElements.push(target);
 				}
+
+				removeDelayed();
 			}
 		});
 	}
