@@ -287,4 +287,4 @@ if ($) {
 	};
 }
 
-}(window, document, window.jQuery || window.u));
+}(window, document, window.jQuery || window.ujs));
