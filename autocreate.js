@@ -208,7 +208,7 @@ function init() {
 }
 
 function AutoCreate(options) {
-	var selector = options.selector || error('Query cannot be empty');
+	var selector = options.selector || error('Selector cannot be empty');
 	var parents = options.parents || dom;
 
 	// convert to array if not array-like object
