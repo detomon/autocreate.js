@@ -141,16 +141,19 @@ function destroyElementModule(element, module, ctx) {
 
 function destroyElement(element) {
 	var ctx = data(element);
-	var modules = ctx.data;
 
-	for (var i in modules) {
-		if (modules.hasOwnProperty(i)) {
-			var module = modules[i];
-			destroyElementModule(element, module, ctx);
+	if (ctx) {
+		var modules = ctx.data;
+
+		for (var i in modules) {
+			if (modules.hasOwnProperty(i)) {
+				var module = modules[i];
+				destroyElementModule(element, module, ctx);
+			}
 		}
-	}
 
-	unsetData(element);
+		unsetData(element);
+	}
 }
 
 function destroyElements(elements) {
