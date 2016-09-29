@@ -56,6 +56,13 @@ autocreate({
 
 		console.log('destroy');
 	},
+
+	/**
+	 * If set to true, the element is destroyed immediately. If set to false, the
+	 * element destruction is delayed to detect if the element is moved inside the
+	 * DOM. However, this can cause problems with other plugins. (optional)
+	 */
+	destroyDelayed: false,
 });
 
 /**

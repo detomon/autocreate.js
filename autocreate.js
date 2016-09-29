@@ -139,26 +139,33 @@ function destroyElementModule(element, module, ctx) {
 	delete module.elements[ctx._id];
 }
 
-function destroyElement(element) {
+function destroyElement(element, delayed) {
 	var ctx = data(element);
 
 	if (ctx) {
+		var success = false;
 		var modules = ctx.data;
 
 		for (var i in modules) {
 			if (modules.hasOwnProperty(i)) {
 				var module = modules[i];
-				destroyElementModule(element, module, ctx);
+
+				if (module._module.destroyDelayed === delayed) {
+					destroyElementModule(element, module, ctx);
+					success = true;
+				}
 			}
 		}
 
-		unsetData(element);
+		if (success) {
+			unsetData(element);
+		}
 	}
 }
 
-function destroyElements(elements) {
+function destroyElements(elements, delayed) {
 	for (var i = 0; i < elements.length; i ++) {
-		destroyElement(elements[i]);
+		destroyElement(elements[i], delayed);
 	}
 }
 
@@ -182,7 +189,7 @@ function removeDelayed() {
 
 		// may be filled again by destructors
 		removedElements = [];
-		destroyElements(elements);
+		destroyElements(elements, true);
 	}, 0);
 }
 
@@ -197,19 +204,36 @@ function init() {
 				var elements = target.querySelectorAll('[data-' + key + ']');
 
 				for (var i = 0; i < elements.length; i ++) {
-					removedElements.push(elements[i]);
+					var element = elements[i];
+					var ctx = data(element);
+
+					if (ctx) {
+						destroyElement(element, false);
+						removedElements.push(element);
+					}
 				}
 
-				if (data(target)) {
+				var ctx = data(target);
+
+				if (ctx) {
+					destroyElement(target, false);
 					removedElements.push(target);
 				}
-
-				removeDelayed();
 			}
+
+			removeDelayed();
 		});
 	}
 }
 
+/**
+ * options:
+ *     selector: element selector (string)
+ *     parents: Single element or array of parents to observe (optional)
+ *     create: The function to be called when creating an element
+ *     destroy: The function to be called when the element is removed from the DOM (optional)
+ *     destroyDelayed: Does not destroy elements moved to other parent element
+ */
 function AutoCreate(options) {
 	var selector = options.selector || error('Selector cannot be empty');
 	var parents = options.parents || dom;
@@ -226,11 +250,13 @@ function AutoCreate(options) {
 	this.selector = selector;
 	this.createCtx = options.create || function () {};
 	this.destroyCtx = options.destroy || function () {};
+	this.destroyDelayed = !!options.destroyDelayed;
 	this.elements = {};
 
 	for (var i = 0; i < parents.length; i ++) {
 		var ctx = observerCtx(parents[i]);
 		ctx.modules[this.id] = this;
+		ctx.options = options;
 	}
 }
 
