@@ -83,7 +83,7 @@ function observerCtx(parent) {
 			var target = e.target;
 
 			if (target.nodeType === Node.ELEMENT_NODE) {
-				handleCtx(this[key], target.parentNode);
+				handleCtx(this[key], this, target);
 			}
 		});
 	}
@@ -103,11 +103,20 @@ function elementCtx(element) {
 	return ctx;
 }
 
-function handleModule(module, parent) {
-	var elements = parent.querySelectorAll(module.selector);
+function handleModule(module, parent, target) {
+	var elements = [];
 
-	for (var j = 0; j < elements.length; j ++) {
-		var element = elements[j];
+	if (target) {
+		if (target.matches(module.selector)) {
+			elements = [target];
+		}
+	}
+	else {
+		elements = parent.querySelectorAll(module.selector);
+	}
+
+	for (var i = 0; i < elements.length; i ++) {
+		var element = elements[i];
 		var ctx = elementCtx(element);
 
 		if (!ctx.data[module.id]) {
@@ -120,13 +129,13 @@ function handleModule(module, parent) {
 	}
 }
 
-function handleCtx(ctx, parent) {
+function handleCtx(ctx, parent, target) {
 	var modules = ctx.modules;
 
 	for (var i in modules) {
 		if (modules.hasOwnProperty(i)) {
 			var module = modules[i];
-			handleModule(module, parent);
+			handleModule(module, parent, target);
 		}
 	}
 }
