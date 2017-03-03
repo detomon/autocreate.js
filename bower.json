@@ -1,7 +1,7 @@
 {
   "name": "autocreate.js",
-  "version": "0.3.4",
-  "description": "autocreate.js is a tiny script that watches for the creation of elements matching a given selector",
+  "version": "0.4.0",
+  "description": "autocreate.js contains a small function that watches for the creation of elements matching a given selector",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/detomon/autocreate.js.git"
