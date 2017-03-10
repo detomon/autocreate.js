@@ -106,6 +106,9 @@
 	 * @return Object The value object.
 	 */
 	function data(element, value) {
+		if (element && !element.dataset) {
+			return false;
+		}
 		if (value === undefined) {
 			value = dataValues[element.dataset[key]];
 		}
