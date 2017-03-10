@@ -152,7 +152,7 @@
 	/**
 	 * Get observer context object for given node.
 	 *
-	 * @param Node A DOME node.
+	 * @param Node A DOM node.
 	 * @return Object The context object.
 	 */
 	function observerCtx(parent) {
@@ -197,6 +197,27 @@
 	}
 
 	/**
+	 * Call different versions of Node's matches method.
+	 *
+	 * @param Node A DOM node.
+	 * @param String The selector to match.
+	 * @return bool
+	 */
+	function matches(element, selector) {
+		var m = element.matches
+			|| element.matchesSelector
+			|| element.msMatchesSelector
+			|| element.mozMatchesSelector
+			|| element.webkitMatchesSelector
+			|| element.oMatchesSelector
+			|| function () {
+				return [].indexOf.call(document.querySelectorAll(selector), element) !== -1;
+			};
+
+		return m.call(element, selector);
+	}
+
+	/**
 	 * Handle module instance for given element.
 	 *
 	 * @param AutoCreate modules The module instance to create.
@@ -207,7 +228,7 @@
 		var allElements = [];
 
 		if (target) {
-			if (target.matches(module.selector)) {
+			if (matches(target, module.selector)) {
 				allElements.push(target);
 			}
 
