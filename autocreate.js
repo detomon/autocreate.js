@@ -47,6 +47,11 @@
 	var dataKey = 'data-' + key;
 
 	/**
+	 * Data attribute selector.
+	 */
+	var dataSelector = '[' + dataKey + ']';
+
+	/**
 	 * The topmost DOM element.
 	 */
 	var dom = document.documentElement;
@@ -55,16 +60,6 @@
 	 * The DOM MutationObserver watching for removed nodes.
 	 */
 	var domObserver;
-
-	/**
-	 * A list of removed nodes for delayed deletion.
-	 */
-	var removedElements = [];
-
-	/**
-	 * Timeout for delayed deletion.
-	 */
-	var removedTimeout;
 
 	/**
 	 * Element prototype.
@@ -130,6 +125,10 @@
 	}
 
 	/**
+	 * Get or create element context.
+	 *
+	 * @param Element element A DOM element.
+	 * @return Object The element context.
 	 */
 	function elementContext(element) {
 		var ctx = element[key];
@@ -150,8 +149,6 @@
 		}
 
 		domObserver = new MutationObserver(function (mutations) {
-			var dataSelector = '[' + dataKey + ']';
-
 			mutations.forEach(function (mutation) {
 				forEachNode(mutation.removedNodes, function (element) {
 					var elements = element.querySelectorAll(dataSelector);
@@ -172,15 +169,20 @@
 				});
 			});
 
-			// TODO: delayed
-
-			//removeDelayed();
+			// TODO: removing delayed
 		});
 
 		domObserver.observe(dom, {childList: true, subtree: true});
 	}
 
 	/**
+	 * Construct Module.
+	 *
+	 * @param Object options The module options:
+	 *     String selector: A selector (e.g. `.wrapper .module`).
+	 *     Function create: A create callback `function (element) {}`.
+	 *     Function destroy: An optional destroy callback `function (element) {}`.
+	 *     Array parents: An optional list of parents.
 	 */
 	var Module = function (options) {
 		options = options || {};
@@ -199,7 +201,7 @@
 		this.selector = selector;
 		this.parents = parents;
 		this.createElement = options.create || function () {};
-		this.destroyElement = options.destroy;
+		this.destroyElement = options.destroy || function () {};
 		this.destroyDelayed = !!options.destroyDelayed;
 		this.elements = {};
 
@@ -210,6 +212,9 @@
 	}
 
 	/**
+	 * Create instance for given element.
+	 *
+	 * @param Element element A DOM element.
 	 */
 	Module.prototype.create = function (element) {
 		var moduleId = this.id;
@@ -217,17 +222,18 @@
 		var data = ctx.data;
 
 		if (!data[moduleId]) {
-			var object = data[moduleId] = {
+			var moduleCtx = data[moduleId] = {
 				module: this,
 				userCtx: {},
 			};
 
 			this.elements[ctx.id] = element;
-			this.createElement.call(object.userCtx, element);
+			this.createElement.call(moduleCtx.userCtx, element);
 		}
 	};
 
 	/**
+	 * Destroy module and call destroy callback for every matching element.
 	 */
 	Module.prototype.destroy = function () {
 		var moduleId = this.id;
@@ -249,7 +255,7 @@
 				var parent = parents[i];
 				var ctx = elementContext(parent);
 
-				ctx.removeModule(module);
+				ctx.removeModule(this);
 			}
 		}
 
@@ -258,6 +264,9 @@
 	};
 
 	/**
+	 * Create instances for target element and matching child elements.
+	 *
+	 * @param Element target A DOM element.
 	 */
 	Module.prototype.createAll = function (target) {
 		var self = this;
@@ -273,15 +282,19 @@
 	};
 
 	/**
+	 * Construct element Context.
+	 *
+	 * @param Element element A DOM element.
 	 */
 	var Context = function (element) {
 		this.id = randomString();
 		this.data = {};
-		this.element = element; // TODO: remove and use function argument?
+		this.element = element;
 		element.setAttribute(dataKey, '');
 	};
 
 	/**
+	 * Add MutationObserver to context.
 	 */
 	Context.prototype.addObserver = function () {
 		if (!this.observer) {
@@ -301,6 +314,7 @@
 	};
 
 	/**
+	 * Remove MutationObserver from context.
 	 */
 	Context.prototype.removeObserver = function () {
 		if (this.observer) {
@@ -311,6 +325,9 @@
 	};
 
 	/**
+	 * Add module.
+	 *
+	 * @param Module module The module to add to the context.
 	 */
 	Context.prototype.addModule = function (module) {
 		this.addObserver();
@@ -318,6 +335,9 @@
 	};
 
 	/**
+	 * Remove module.
+	 *
+	 * @param Module module The module to remove from the context.
 	 */
 	Context.prototype.removeModule = function (module) {
 		// TODO: make faster?
@@ -348,6 +368,9 @@
 	};
 
 	/**
+	 * Create instances for target element and matching child elements.
+	 *
+	 * @param Element target A DOM element.
 	 */
 	Context.prototype.createAll = function (target) {
 		var modules = this.modules;
@@ -360,6 +383,7 @@
 	};
 
 	/**
+	 * Destroy context.
 	 */
 	Context.prototype.destroy = function () {
 		var element = this.element;
@@ -370,7 +394,9 @@
 
 		for (var i in data) {
 			if (data.hasOwnProperty(i)) {
-				module.destroyElement.call(data[i].userCtx, element);
+				var moduleCtx = data[i];
+
+				moduleCtx.module.destroyElement.call(moduleCtx.userCtx, element);
 			}
 		}
 
@@ -379,6 +405,10 @@
 	};
 
 	/**
+	 * Create instance of Module.
+	 *
+	 * @param Object options Options for Module constructor.
+	 * @return Module
 	 */
 	function autocreate(options) {
 		init();
