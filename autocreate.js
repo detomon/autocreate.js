@@ -111,7 +111,7 @@
 		for (var i = 0; i < nodes.length; i++) {
 			var node = nodes[i];
 
-			if (node.nodeType === Element.ELEMENT_NODE) {
+			if (node.nodeType === Node.ELEMENT_NODE) {
 				func(node);
 			}
 		}
