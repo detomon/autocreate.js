@@ -340,18 +340,16 @@
 	 * @param Module module The module to remove from the context.
 	 */
 	Context.prototype.removeModule = function (module) {
-		// TODO: make faster?
-
 		var moduleId = module.id;
+		var element = this.element;
 		var data = this.data;
 		var modules = this.modules;
+		var modulesLength = 0;
 
 		if (data[moduleId]) {
-			module.destroyElement.call(data[moduleId].userCtx, this.element);
+			module.destroyElement.call(data[moduleId].userCtx, element);
 			delete data[moduleId];
 		}
-
-		var modulesLength = 0;
 
 		if (modules) {
 			delete modules[moduleId];
