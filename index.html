@@ -26,7 +26,7 @@
 /**
  * Look for `.module` elements in `.wrapper`.
  */
-autocreate({
+var module = autocreate({
 	/**
 	 * Match selector.
 	 */
@@ -38,12 +38,16 @@ autocreate({
 	create: function (element) {
 		var self = this;
 
-		//element.textContent = 'Init';
-
-		this.interval = setInterval(function () {
+		function update() {
 			self.value = (Math.random() * 100) | 0;
 			element.textContent = self.value;
+		}
+
+		this.interval = setInterval(function () {
+			update();
 		}, 500);
+
+		update();
 
 		console.log('create');
 	},
@@ -69,21 +73,22 @@ autocreate({
  * Add `.module` element to `.wrapper`.
  */
 document.querySelector('#add').addEventListener('click', function () {
-	var button = document.createElement('div');
-	button.classList.add('module');
-	button.textContent = 'Text';
+	var element = document.createElement('div');
 
-	document.querySelector('.wrapper').appendChild(button);
+	element.classList.add('module');
+	element.textContent = 'Init';
+
+	document.querySelector('.wrapper').appendChild(element);
 });
 
 /**
  * Remove single `.module` element from DOM.
  */
 document.querySelector('#remove').addEventListener('click', function () {
-	var button = document.querySelector('.module');
+	var element = document.querySelector('.module');
 
-	if (button) {
-		button.parentNode.removeChild(button);
+	if (element) {
+		element.parentNode.removeChild(element);
 	}
 });
 
