@@ -1,6 +1,6 @@
 {
   "name": "autocreate.js",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "autocreate.js contains a small function that watches for the creation of elements matching a given selector",
   "repository": {
     "type": "git",
