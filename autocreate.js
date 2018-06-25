@@ -226,9 +226,10 @@
 				module: this,
 				userCtx: {},
 			};
+			var userCtx = moduleCtx.userCtx;
 
 			this.elements[ctx.id] = element;
-			this.createElement.call(moduleCtx.userCtx, element);
+			this.createElement.call(userCtx, element, userCtx);
 		}
 	};
 
@@ -347,7 +348,9 @@
 		var modulesLength = 0;
 
 		if (data[moduleId]) {
-			module.destroyElement.call(data[moduleId].userCtx, element);
+			var userCtx = data[moduleId].userCtx;
+
+			module.destroyElement.call(userCtx, element, userCtx);
 			delete data[moduleId];
 		}
 
@@ -393,8 +396,9 @@
 		for (var i in data) {
 			if (data.hasOwnProperty(i)) {
 				var moduleCtx = data[i];
+				var userCtx = moduleCtx.userCtx;
 
-				moduleCtx.module.destroyElement.call(moduleCtx.userCtx, element);
+				moduleCtx.module.destroyElement.call(userCtx, element, userCtx);
 			}
 		}
 
