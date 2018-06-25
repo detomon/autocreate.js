@@ -35,30 +35,28 @@ var module = autocreate({
 	/**
 	 * Callback which is called with the element matching the selector.
 	 */
-	create: function (element) {
-		var self = this;
-
+	create: (element, context) => {
 		function update() {
-			self.value = (Math.random() * 100) | 0;
-			element.textContent = self.value;
+			context.value = (Math.random() * 100) | 0;
+			element.textContent = context.value;
 		}
 
-		this.interval = setInterval(function () {
+		context.interval = setInterval(function () {
 			update();
 		}, 500);
 
 		update();
 
-		console.log('create');
+		console.log('create', context);
 	},
 
 	/**
 	 * Callback which is called when the element or one of its parents is removed.
 	 */
-	destroy: function (element) {
-		clearInterval(this.interval);
+	destroy: (element, context) => {
+		clearInterval(context.interval);
 
-		console.log('destroy');
+		console.log('destroy', context);
 	},
 
 	/**

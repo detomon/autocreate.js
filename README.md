@@ -1,6 +1,6 @@
 # autocreate.js
 
-`autocreate.js` provides a small function that watches for the creation of elements matching a given selector. The `create` callback is called for existing and later inserted elements. The `destroy` callback is called whenever the element or one of its ancestors is removed from the DOM.
+`autocreate.js` provides a function that watches for the creation of elements matching a given selector. The `create` callback is called for existing and later inserted elements. The `destroy` callback is called whenever the element or one of its ancestors is removed from the DOM.
 
 ```html
 <div class="page-wrapper">
@@ -12,21 +12,23 @@
 </div>
 ```
 
+The `context` object provided by the `create` and `destroy` callbacks can be used for arbitary content.
+
 ```js
 var module = autocreate({
 	// selector of elements to observe
 	selector: '.page-wrapper .slideshow',
 
 	// called for existing and inserted elements
-	create: function (element) {
+	create: (element, context) => {
 		// initialize hypothetical slideshow
-		this.slideshow = new Slideshow(element);
+		context.slideshow = new Slideshow(element);
 	},
 
 	// called whenever the element or one of its ancestors is removed
-	destroy: function (element) {
+	destroy: (element, context) => {
 		// destroy slideshow
-		this.slideshow.destroy();
+		context.slideshow.destroy();
 	},
 });
 
@@ -69,12 +71,12 @@ var module = autocreate({
 	parents: document.querySelectorAll('.wrapper'),
 
 	// called for existing and inserted elements
-	create: function (element) {
+	create: (element, context) => {
 		// ...
 	},
 
 	// called when element is removed
-	destroy: function (element) {
+	destroy: (element, context) => {
 		// ...
 	},
 });
@@ -95,10 +97,10 @@ The observer function can also be called using `jQuery` or `u.js`. The following
 ```js
 var module = $(document).autocreate({
 	selector: '.element',
-	create: function (element) {
+	create: (element, context) => {
 		// ...
 	},
-	destroy: function (element) {
+	destroy: (element, context) => {
 		// ...
 	},
 });
@@ -109,10 +111,10 @@ The following searches only in `.wrapper` elements. This is the same as using th
 ```js
 var module = $('.wrapper').autocreate({
 	selector: '.element',
-	create: function (element) {
+	create: (element, context) => {
 		// ...
 	},
-	destroy: function (element) {
+	destroy: (element, context) => {
 		// ...
 	},
 });
