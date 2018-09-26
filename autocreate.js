@@ -33,7 +33,7 @@
 	else {
 		root.autocreate = factory();
 	}
-}(this, function () {
+}(this || window, function () {
 	'use strict';
 
 	/**
